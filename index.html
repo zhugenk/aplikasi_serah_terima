@@ -494,7 +494,11 @@ function stopAutoRefresh() {
 
 // ── API ───────────────────────────────────────
 async function api(body) {
-  const res = await fetch(API_URL, { method:"POST", body:JSON.stringify(body) });
+  const res = await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "text/plain;charset=utf-8" }
+  });
   return res.json();
 }
 
@@ -631,7 +635,7 @@ function renderStatus() {
   if (pagStatus > totalHal) pagStatus = totalHal;
   const slice = data.slice((pagStatus-1)*PAGE_SIZE, pagStatus*PAGE_SIZE);
   el.innerHTML = slice.map(d=>ampItemHtml(d,false)).join("");
-  renderPagination("pag-status", pagStatus, totalHal, data.length, (p)=>{ pagStatus=p; renderStatus(); });
+  renderPagination("pag-status", pagStatus, totalHal, data.length, "gotoPagStatus");
 }
 
 // ── DASHBOARD GUDANG ──────────────────────────
@@ -737,18 +741,19 @@ function renderGudang() {
   if (pagGudang > totalHal) pagGudang = totalHal;
   const slice = data.slice((pagGudang-1)*PAGE_SIZE, pagGudang*PAGE_SIZE);
   el.innerHTML = slice.map(d=>ampItemHtml(d,true)).join("");
-  renderPagination("pag-gudang", pagGudang, totalHal, data.length, (p)=>{ pagGudang=p; renderGudang(); });
+  renderPagination("pag-gudang", pagGudang, totalHal, data.length, "gotoPagGudang");
 }
 
 // ── PAGINATION RENDERER ───────────────────────
-function renderPagination(containerId, halAktif, totalHal, totalData, onPage) {
+// onPageFnName harus berupa NAMA fungsi global (string), misal "gotoPagStatus",
+// bukan fungsi/closure langsung — supaya aman saat disisipkan ke atribut onclick.
+function renderPagination(containerId, halAktif, totalHal, totalData, onPageFnName) {
   const el = document.getElementById(containerId);
   if (totalHal <= 1) { el.innerHTML=""; return; }
 
   const awal = (halAktif-1)*PAGE_SIZE + 1;
   const akhir = Math.min(halAktif*PAGE_SIZE, totalData);
 
-  // Buat nomor halaman yang ditampilkan (max 5 tombol angka)
   let pages = [];
   if (totalHal <= 7) {
     for (let i=1;i<=totalHal;i++) pages.push(i);
@@ -762,17 +767,20 @@ function renderPagination(containerId, halAktif, totalHal, totalData, onPage) {
 
   const tombol = pages.map(p => {
     if (p==="...") return `<span class="pag-info">…</span>`;
-    return `<button class="pag-btn${p===halAktif?" active":""}" onclick="(${onPage.toString()})(${p})">${p}</button>`;
+    return `<button class="pag-btn${p===halAktif?" active":""}" onclick="${onPageFnName}(${p})">${p}</button>`;
   }).join("");
 
   el.innerHTML = `
     <div class="pagination">
-      <button class="pag-btn" onclick="(${onPage.toString()})(${halAktif-1})" ${halAktif===1?"disabled":""}>‹ Prev</button>
+      <button class="pag-btn" onclick="${onPageFnName}(${halAktif-1})" ${halAktif===1?"disabled":""}>‹ Prev</button>
       ${tombol}
-      <button class="pag-btn" onclick="(${onPage.toString()})(${halAktif+1})" ${halAktif===totalHal?"disabled":""}>Next ›</button>
+      <button class="pag-btn" onclick="${onPageFnName}(${halAktif+1})" ${halAktif===totalHal?"disabled":""}>Next ›</button>
       <span class="pag-info">${awal}–${akhir} dari ${totalData}</span>
     </div>`;
 }
+
+function gotoPagStatus(p) { pagStatus = p; renderStatus(); }
+function gotoPagGudang(p) { pagGudang = p; renderGudang(); }
 
 // ── RENDER ITEM ───────────────────────────────
 function ampItemHtml(d,isGudang) {
@@ -845,3 +853,4 @@ document.getElementById("login-nama").addEventListener("keydown",e=>{ if(e.key==
 </script>
 </body>
 </html>
+
