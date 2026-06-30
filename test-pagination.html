@@ -640,17 +640,24 @@ async function loadGudang() {
   document.getElementById("pag-gudang").innerHTML="";
   try {
     const isKepala = user.role === "kepala_gudang";
+    console.log("DEBUG: mulai loadGudang, isKepala =", isKepala);
     if (isKepala) {
       const [resData, resStats] = await Promise.all([
         api({ action:"getAmprahan", role:user.role, nama:user.nama, ruangan:user.ruangan }),
         api({ action:"getStats",    role:user.role, nama:user.nama, ruangan:user.ruangan }),
       ]);
+      console.log("DEBUG: resData.ok =", resData.ok, "jumlah data =", resData.data ? resData.data.length : "N/A");
+      console.log("DEBUG: resStats =", resStats);
       if (resData.ok) {
         dataGudang = resData.data;
+        console.log("DEBUG: sebelum getDuplikatIdMutasi");
         dupSet = getDuplikatIdMutasi(dataGudang);
+        console.log("DEBUG: setelah getDuplikatIdMutasi, dupSet size =", dupSet.size);
         if (idKnown.size === 0) dataGudang.forEach(d => idKnown.add(d.idTransaksi));
         pagGudang = 1;
+        console.log("DEBUG: sebelum renderGudang");
         renderGudang();
+        console.log("DEBUG: setelah renderGudang - SUKSES");
       }
       if (resStats.ok) renderStats(resStats);
     } else {
@@ -666,6 +673,8 @@ async function loadGudang() {
     }
   } catch(e) {
     console.error("DEBUG loadGudang error:", e);
+    console.error("DEBUG error message:", e.message);
+    console.error("DEBUG error stack:", e.stack);
     document.getElementById("list-gudang").innerHTML = `<div class="empty">Gagal terhubung ke server.</div>`;
   }
 }
@@ -850,3 +859,4 @@ document.getElementById("login-nama").addEventListener("keydown",e=>{ if(e.key==
 </script>
 </body>
 </html>
+
