@@ -494,11 +494,7 @@ function stopAutoRefresh() {
 
 // ── API ───────────────────────────────────────
 async function api(body) {
-  const res = await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify(body),
-    headers: { "Content-Type": "text/plain;charset=utf-8" }
-  });
+  const res = await fetch(API_URL, { method:"POST", body:JSON.stringify(body) });
   return res.json();
 }
 
@@ -669,6 +665,7 @@ async function loadGudang() {
       }
     }
   } catch(e) {
+    console.error("DEBUG loadGudang error:", e);
     document.getElementById("list-gudang").innerHTML = `<div class="empty">Gagal terhubung ke server.</div>`;
   }
 }
