@@ -640,24 +640,17 @@ async function loadGudang() {
   document.getElementById("pag-gudang").innerHTML="";
   try {
     const isKepala = user.role === "kepala_gudang";
-    console.log("DEBUG: mulai loadGudang, isKepala =", isKepala);
     if (isKepala) {
       const [resData, resStats] = await Promise.all([
         api({ action:"getAmprahan", role:user.role, nama:user.nama, ruangan:user.ruangan }),
         api({ action:"getStats",    role:user.role, nama:user.nama, ruangan:user.ruangan }),
       ]);
-      console.log("DEBUG: resData.ok =", resData.ok, "jumlah data =", resData.data ? resData.data.length : "N/A");
-      console.log("DEBUG: resStats =", resStats);
       if (resData.ok) {
         dataGudang = resData.data;
-        console.log("DEBUG: sebelum getDuplikatIdMutasi");
         dupSet = getDuplikatIdMutasi(dataGudang);
-        console.log("DEBUG: setelah getDuplikatIdMutasi, dupSet size =", dupSet.size);
         if (idKnown.size === 0) dataGudang.forEach(d => idKnown.add(d.idTransaksi));
         pagGudang = 1;
-        console.log("DEBUG: sebelum renderGudang");
         renderGudang();
-        console.log("DEBUG: setelah renderGudang - SUKSES");
       }
       if (resStats.ok) renderStats(resStats);
     } else {
@@ -672,9 +665,7 @@ async function loadGudang() {
       }
     }
   } catch(e) {
-    console.error("DEBUG loadGudang error:", e);
-    console.error("DEBUG error message:", e.message);
-    console.error("DEBUG error stack:", e.stack);
+    console.error("loadGudang error:", e);
     document.getElementById("list-gudang").innerHTML = `<div class="empty">Gagal terhubung ke server.</div>`;
   }
 }
@@ -721,7 +712,7 @@ function resetPagGudang() { pagGudang=1; renderGudang(); }
 function getDuplikatIdMutasi(data) {
   const counter = {};
   data.forEach(d => {
-    const id = (d.noIdMutasi || "").trim();
+    const id = String(d.noIdMutasi ?? "").trim();
     if (!id) return;
     counter[id] = (counter[id] || 0) + 1;
   });
@@ -734,7 +725,7 @@ function renderGudang() {
     const mS = filterGudang==="semua"   || d.status===filterGudang;
     const mK = filterKategori==="semua" || (d.kategori||"").toLowerCase()===filterKategori.toLowerCase();
     const mJ = filterJenis==="semua"    || (d.jenisAmprahan||"").toLowerCase()===filterJenis.toLowerCase();
-    const mQ = !q||(d.asalRuangan||"").toLowerCase().includes(q)||(d.namaPetugas||"").toLowerCase().includes(q)||(d.idTransaksi||"").toLowerCase().includes(q)||(d.noIdMutasi||"").toLowerCase().includes(q);
+    const mQ = !q||(d.asalRuangan||"").toLowerCase().includes(q)||(d.namaPetugas||"").toLowerCase().includes(q)||(d.idTransaksi||"").toLowerCase().includes(q)||String(d.noIdMutasi??"").toLowerCase().includes(q);
     return mS&&mK&&mJ&&mQ;
   });
   const el = document.getElementById("list-gudang");
@@ -791,7 +782,7 @@ function gotoPagGudang(p) { pagGudang = p; renderGudang(); }
 // ── RENDER ITEM ───────────────────────────────
 function ampItemHtml(d,isGudang) {
   const sc = d.status==="Sudah Dilayani"?"sudah":d.status==="Batal"?"batal":"belum";
-  const idMutasiHtml = dupSet.has((d.noIdMutasi||'').trim())
+  const idMutasiHtml = dupSet.has(String(d.noIdMutasi??'').trim())
     ? `<span class="amp-idmutasi-dup" title="ID Mutasi ini dipakai lebih dari satu kali">${d.noIdMutasi}</span>`
     : d.noIdMutasi;
   return `
@@ -859,4 +850,5 @@ document.getElementById("login-nama").addEventListener("keydown",e=>{ if(e.key==
 </script>
 </body>
 </html>
+
 
