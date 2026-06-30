@@ -470,10 +470,6 @@ async function autoRefresh() {
       dataGudang = semua;
       dupSet = getDuplikatIdMutasi(dataGudang);
       renderGudang();
-      if (user.role === "kepala_gudang") {
-        const st = await api({ action:"getStats", role:user.role, nama:user.nama, ruangan:user.ruangan });
-        if (st.ok) renderStats(st);
-      } else { hitungStatLokal(dataGudang); }
       showToast("🔔 " + baru.length + " amprahan baru masuk!", "info");
     }
   } catch(e) { /* silent */ }
@@ -641,10 +637,7 @@ async function loadGudang() {
   try {
     const isKepala = user.role === "kepala_gudang";
     if (isKepala) {
-      const [resData, resStats] = await Promise.all([
-        api({ action:"getAmprahan", role:user.role, nama:user.nama, ruangan:user.ruangan }),
-        api({ action:"getStats",    role:user.role, nama:user.nama, ruangan:user.ruangan }),
-      ]);
+      const resData = await api({ action:"getAmprahan", role:user.role, nama:user.nama, ruangan:user.ruangan });
       if (resData.ok) {
         dataGudang = resData.data;
         dupSet = getDuplikatIdMutasi(dataGudang);
@@ -652,7 +645,6 @@ async function loadGudang() {
         pagGudang = 1;
         renderGudang();
       }
-      if (resStats.ok) renderStats(resStats);
     } else {
       const resData = await api({ action:"getAmprahan", role:user.role, nama:user.nama, ruangan:user.ruangan });
       if (resData.ok) {
@@ -661,7 +653,6 @@ async function loadGudang() {
         if (idKnown.size === 0) dataGudang.forEach(d => idKnown.add(d.idTransaksi));
         pagGudang = 1;
         renderGudang();
-        hitungStatLokal(dataGudang);
       }
     }
   } catch(e) {
@@ -670,10 +661,8 @@ async function loadGudang() {
   }
 }
 
-function renderStats(s) { renderStatGrid(s.total, s.belum, s.sudah, s.batal, "Semua Jenis"); }
-
 function hitungStatLokal(data) {
-  const jenisLabel = { "gudang_obat":"Obat", "gudang_bhp":"BMHP / Cairan / B3" };
+  const jenisLabel = { "gudang_obat":"Obat", "gudang_bhp":"BMHP / Cairan / B3", "kepala_gudang":"Semua Jenis" };
   const label = jenisLabel[user.role] || "";
   renderStatGrid(data.length,
     data.filter(d=>d.status==="Belum Dilayani").length,
@@ -721,6 +710,17 @@ function getDuplikatIdMutasi(data) {
 
 function renderGudang() {
   const q = (document.getElementById("search-gudang").value||"").toLowerCase();
+
+  // Data dasar untuk STATS: ikut filter Kategori & Jenis, TAPI TIDAK ikut filter Status
+  // (karena stats sendiri adalah breakdown per status) dan tidak ikut search box.
+  const dataUntukStats = dataGudang.filter(d => {
+    const mK = filterKategori==="semua" || (d.kategori||"").toLowerCase()===filterKategori.toLowerCase();
+    const mJ = filterJenis==="semua"    || (d.jenisAmprahan||"").toLowerCase()===filterJenis.toLowerCase();
+    return mK && mJ;
+  });
+  hitungStatLokal(dataUntukStats);
+
+  // Data untuk LIST: ikut semua filter (status, kategori, jenis, search)
   const data = dataGudang.filter(d => {
     const mS = filterGudang==="semua"   || d.status===filterGudang;
     const mK = filterKategori==="semua" || (d.kategori||"").toLowerCase()===filterKategori.toLowerCase();
@@ -850,3 +850,4 @@ document.getElementById("login-nama").addEventListener("keydown",e=>{ if(e.key==
 </script>
 </body>
 </html>
+
