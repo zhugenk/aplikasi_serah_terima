@@ -6,13 +6,14 @@
 <title>Sistem Amprahan Farmasi</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Arial,sans-serif;font-size:14px;background:#f0f2f5;color:#333;height:100vh;overflow:hidden}
-  #halaman-login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;overflow-y:auto}
+  html{height:100%}
+  body{font-family:Arial,sans-serif;font-size:14px;background:#f0f2f5;color:#333;height:100vh;height:100dvh;overflow:hidden}
+  #halaman-login{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;padding:20px;overflow-y:auto}
   .login-card{background:#fff;border-radius:12px;padding:40px 32px;width:100%;max-width:400px;box-shadow:0 2px 16px rgba(0,0,0,0.10)}
   .login-card h1{font-size:20px;font-weight:700;color:#1a56db;margin-bottom:4px;text-align:center}
   .login-card p{font-size:13px;color:#666;text-align:center;margin-bottom:28px}
   .login-logo{text-align:center;margin-bottom:16px;font-size:40px}
-  #halaman-app{display:none;height:100vh;flex-direction:column;overflow:hidden}
+  #halaman-app{display:none;flex-direction:column;height:100%;overflow:hidden}
 
   /* ── HEADER TETAP (TIDAK IKUT SCROLL SAMA SEKALI) ── */
   .sticky-header{
@@ -32,10 +33,10 @@
   .tab.active{color:#1a56db;border-bottom-color:#1a56db}
   .tab:hover:not(.active){background:#f5f7ff;color:#333}
 
-  .content{padding:16px;max-width:900px;margin:0 auto;width:100%;flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+  .content{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;width:100%}
   .tab-panel{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
-  .tab-panel-fixed{flex-shrink:0}
-  .tab-panel-scroll{flex:1;overflow-y:auto;min-height:0}
+  .tab-panel-fixed{flex-shrink:0;padding:16px 16px 0;max-width:900px;margin:0 auto;width:100%;box-sizing:border-box}
+  .tab-panel-scroll{flex:1;overflow-y:auto;min-height:0;padding:16px;max-width:900px;margin:0 auto;width:100%;box-sizing:border-box}
   .card{background:#fff;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
   .card h3{font-size:14px;font-weight:700;color:#1a56db;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #eee}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -247,7 +248,7 @@
   <div class="content">
 
     <!-- TAB FORM -->
-    <div id="tab-form" class="tab-panel tab-panel-scroll" style="display:none">
+    <div id="tab-form" class="tab-panel-scroll" data-tabpanel style="display:none;flex:1">
       <div class="card">
         <h3>📋 Form Amprahan Baru</h3>
         <div class="form-grid">
@@ -299,7 +300,7 @@
     </div>
 
     <!-- TAB STATUS -->
-    <div id="tab-status" class="tab-panel" style="display:none">
+    <div id="tab-status" class="tab-panel" data-tabpanel style="display:none">
       <div class="tab-panel-fixed">
         <div class="filter-bar">
           <div class="chip active" onclick="setFilterStatus('semua',this)">Semua</div>
@@ -316,7 +317,7 @@
     </div>
 
     <!-- TAB GUDANG -->
-    <div id="tab-gudang" class="tab-panel" style="display:none">
+    <div id="tab-gudang" class="tab-panel" data-tabpanel style="display:none">
       <div class="tab-panel-fixed">
         <div class="notif-banner" id="notif-banner" style="display:none">
           🔔 Aktifkan notifikasi agar muncul pemberitahuan otomatis saat ada amprahan baru masuk.
@@ -571,11 +572,11 @@ function renderTabBar() {
 }
 
 function switchTab(name) {
-  document.querySelectorAll(".tab-panel").forEach(p => p.style.display="none");
+  document.querySelectorAll("[data-tabpanel]").forEach(p => p.style.display="none");
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
   const panel = document.getElementById("tab-"+name);
   const tabEl = document.getElementById("tabn-"+name);
-  if (panel) panel.style.display = "block";
+  if (panel) panel.style.display = "flex";
   if (tabEl) tabEl.classList.add("active");
   if (name === "status") loadAmprahan();
   if (name === "gudang") loadGudang();
