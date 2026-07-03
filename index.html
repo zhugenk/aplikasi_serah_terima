@@ -12,7 +12,15 @@
   .login-card h1{font-size:20px;font-weight:700;color:#1a56db;margin-bottom:4px;text-align:center}
   .login-card p{font-size:13px;color:#666;text-align:center;margin-bottom:28px}
   .login-logo{text-align:center;margin-bottom:16px;font-size:40px}
-  #halaman-app{display:none}
+  #halaman-app{display:none;min-height:100vh}
+
+  /* ── STICKY HEADER ── */
+  .sticky-header{
+    position:sticky;
+    top:0;
+    z-index:50;
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
+  }
   .topbar{background:#1a56db;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
   .topbar h2{font-size:15px;font-weight:600}
   .topbar-info{font-size:12px;opacity:0.85}
@@ -25,6 +33,7 @@
   .tab{padding:12px 20px;cursor:pointer;font-size:13px;color:#666;border-bottom:3px solid transparent;white-space:nowrap;font-weight:500}
   .tab.active{color:#1a56db;border-bottom-color:#1a56db}
   .tab:hover:not(.active){background:#f5f7ff;color:#333}
+
   .content{padding:16px;max-width:900px;margin:0 auto}
   .card{background:#fff;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
   .card h3{font-size:14px;font-weight:700;color:#1a56db;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #eee}
@@ -88,15 +97,33 @@
   .spinner{display:inline-block;width:24px;height:24px;border:3px solid #e0e0e0;border-top-color:#1a56db;border-radius:50%;animation:spin 0.7s linear infinite;margin-bottom:8px}
   @keyframes spin{to{transform:rotate(360deg)}}
   .empty{text-align:center;padding:40px;color:#aaa;font-size:13px}
+
   /* Banner notif */
   .notif-banner{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#795548;display:flex;align-items:center;justify-content:space-between;gap:10px}
   .notif-banner button{background:#ff8800;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;white-space:nowrap}
+
+  /* ── PAGINATION ── */
+  .pagination{
+    display:flex;align-items:center;justify-content:center;
+    gap:6px;margin-top:16px;margin-bottom:8px;flex-wrap:wrap;
+  }
+  .pag-btn{
+    padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;
+    cursor:pointer;border:1px solid #d1d5db;background:#fff;color:#374151;
+    transition:all 0.12s;min-width:34px;text-align:center;
+  }
+  .pag-btn:hover:not(:disabled):not(.active){background:#f0f2f5}
+  .pag-btn.active{background:#1a56db;color:#fff;border-color:#1a56db}
+  .pag-btn:disabled{opacity:0.4;cursor:not-allowed}
+  .pag-info{font-size:12px;color:#666;padding:0 4px}
+
   @media(max-width:600px){
     .form-grid{grid-template-columns:1fr}
     .stat-grid{grid-template-columns:repeat(2,1fr)}
     .search-box{width:100%}
     .topbar-right{gap:4px}
   }
+
   /* DUPLICATE ID MUTASI HIGHLIGHT */
   .amp-idmutasi-dup{
     background:#fde8e8;color:#c81e1e;font-weight:700;
@@ -201,17 +228,21 @@
 </div>
 
 <div id="halaman-app">
-  <div class="topbar">
-    <div>
-      <h2>💊 Amprahan Farmasi</h2>
-      <div class="topbar-info" id="topbar-info"></div>
+  <!-- ── STICKY HEADER ── -->
+  <div class="sticky-header">
+    <div class="topbar">
+      <div>
+        <h2>💊 Amprahan Farmasi</h2>
+        <div class="topbar-info" id="topbar-info"></div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-notif" id="btn-notif" onclick="mintaIzinNotif()">🔔 Aktifkan Notifikasi</button>
+        <button class="btn-logout" onclick="doLogout()">Keluar</button>
+      </div>
     </div>
-    <div class="topbar-right">
-      <button class="btn-notif" id="btn-notif" onclick="mintaIzinNotif()">🔔 Aktifkan Notifikasi</button>
-      <button class="btn-logout" onclick="doLogout()">Keluar</button>
-    </div>
+    <div class="tab-bar" id="tab-bar"></div>
   </div>
-  <div class="tab-bar" id="tab-bar"></div>
+
   <div class="content">
 
     <!-- TAB FORM -->
@@ -276,11 +307,11 @@
         <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="loadAmprahan()">↻ Refresh</button>
       </div>
       <div id="list-status"></div>
+      <div id="pag-status"></div>
     </div>
 
     <!-- TAB GUDANG -->
     <div id="tab-gudang" class="tab-panel" style="display:none">
-      <!-- Banner notif -->
       <div class="notif-banner" id="notif-banner" style="display:none">
         🔔 Aktifkan notifikasi agar muncul pemberitahuan otomatis saat ada amprahan baru masuk.
         <button onclick="mintaIzinNotif()">Aktifkan</button>
@@ -313,10 +344,11 @@
         <div class="chip" onclick="setFilterJenis('B3',this)">⚗️ B3</div>
       </div>
       <div class="filter-bar">
-        <input type="text" class="search-box" id="search-gudang" placeholder="Cari ruangan / petugas / ID..." oninput="renderGudang()" style="margin-left:0;width:100%;max-width:340px">
+        <input type="text" class="search-box" id="search-gudang" placeholder="Cari ruangan / petugas / ID..." oninput="resetPagGudang()" style="margin-left:0;width:100%;max-width:340px">
         <button class="btn btn-secondary btn-sm" onclick="loadGudang()">↻ Refresh</button>
       </div>
       <div id="list-gudang"></div>
+      <div id="pag-gudang"></div>
     </div>
   </div>
 </div>
@@ -349,6 +381,7 @@
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbx1ZAs4i6tQKH7a9eE9_2tIZaJDmwd23nd0USBZ9MtqWbEX_yLLAzxaFdj0nx6yftH8/exec";
+const PAGE_SIZE = 20;
 
 const JENIS_OBAT_LIST = ["obat"];
 const JENIS_BHP_LIST  = ["bmhp","cairan","b3"];
@@ -361,11 +394,16 @@ let filterGudang   = "semua";
 let filterKategori = "semua";
 let filterJenis    = "semua";
 let editId         = null;
+let dupSet         = new Set();
+
+// Halaman aktif per tab
+let pagStatus = 1;
+let pagGudang = 1;
 
 // ── NOTIFIKASI ────────────────────────────────
-let notifInterval    = null;
-let idKnown          = new Set();
-let notifAktif       = false;
+let notifInterval = null;
+let idKnown       = new Set();
+let notifAktif    = false;
 
 function cekStatusNotif() {
   if (!("Notification" in window)) return;
@@ -373,7 +411,6 @@ function cekStatusNotif() {
     notifAktif = true;
     setTombolNotifAktif();
   } else if (Notification.permission === "default") {
-    // Belum pernah diminta — tampilkan banner & tombol
     document.getElementById("btn-notif").style.display = "inline-block";
     document.getElementById("notif-banner").style.display = "flex";
   }
@@ -384,14 +421,12 @@ function setTombolNotifAktif() {
   btn.style.display = "inline-block";
   btn.textContent   = "🔔 Notifikasi Aktif";
   btn.classList.add("aktif");
-  btn.onclick       = null; // nonaktifkan klik setelah aktif
+  btn.onclick       = null;
   document.getElementById("notif-banner").style.display = "none";
 }
 
 function mintaIzinNotif() {
-  if (!("Notification" in window)) {
-    showToast("Browser ini tidak mendukung notifikasi.", "error"); return;
-  }
+  if (!("Notification" in window)) { showToast("Browser ini tidak mendukung notifikasi.", "error"); return; }
   Notification.requestPermission().then(perm => {
     if (perm === "granted") {
       notifAktif = true;
@@ -411,8 +446,8 @@ function mintaIzinNotif() {
 function kirimNotifBrowser(judul, pesan) {
   if (!notifAktif || Notification.permission !== "granted") return;
   const n = new Notification(judul, {
-    body : pesan,
-    icon : "https://cdn-icons-png.flaticon.com/512/822/822115.png",
+    body: pesan,
+    icon: "https://cdn-icons-png.flaticon.com/512/822/822115.png",
   });
   n.onclick = () => { window.focus(); n.close(); };
 }
@@ -425,31 +460,16 @@ async function autoRefresh() {
     const res = await api({ action:"getAmprahan", role:user.role, nama:user.nama, ruangan:user.ruangan });
     if (!res.ok) return;
     const semua = res.data.filter(d => isJenisSesuaiRole(d.jenisAmprahan, user.role));
-
-    // Pertama kali — isi cache tanpa notif
-    if (idKnown.size === 0) {
-      semua.forEach(d => idKnown.add(d.idTransaksi));
-      return;
-    }
-
+    if (idKnown.size === 0) { semua.forEach(d => idKnown.add(d.idTransaksi)); return; }
     const baru = semua.filter(d => !idKnown.has(d.idTransaksi));
     if (baru.length > 0) {
       baru.forEach(d => {
         idKnown.add(d.idTransaksi);
-        kirimNotifBrowser(
-          "🔔 Amprahan Baru Masuk!",
-          d.asalRuangan + " · " + d.jenisAmprahan + " · " + d.kategori + " · " + d.namaPetugas
-        );
+        kirimNotifBrowser("🔔 Amprahan Baru Masuk!", d.asalRuangan + " · " + d.jenisAmprahan + " · " + d.kategori + " · " + d.namaPetugas);
       });
       dataGudang = semua;
+      dupSet = getDuplikatIdMutasi(dataGudang);
       renderGudang();
-      // update statistik
-      if (user.role === "kepala_gudang") {
-        const st = await api({ action:"getStats", role:user.role, nama:user.nama, ruangan:user.ruangan });
-        if (st.ok) renderStats(st);
-      } else {
-        hitungStatLokal(dataGudang);
-      }
       showToast("🔔 " + baru.length + " amprahan baru masuk!", "info");
     }
   } catch(e) { /* silent */ }
@@ -458,8 +478,8 @@ async function autoRefresh() {
 function mulaiAutoRefresh() {
   if (notifInterval) clearInterval(notifInterval);
   idKnown.clear();
-  notifInterval = setInterval(autoRefresh, 30000); // cek tiap 30 detik
-  autoRefresh(); // langsung cek sekali untuk isi cache awal
+  notifInterval = setInterval(autoRefresh, 30000);
+  autoRefresh();
 }
 
 function stopAutoRefresh() {
@@ -512,10 +532,7 @@ function masukApp() {
   document.getElementById("f-tanggal").value = hariIni();
   renderTabBar();
   const isGudang = ["gudang_obat","gudang_bhp","kepala_gudang"].includes(user.role);
-  if (isGudang) {
-    cekStatusNotif();
-    mulaiAutoRefresh();
-  }
+  if (isGudang) { cekStatusNotif(); mulaiAutoRefresh(); }
   switchTab(isGudang ? "gudang" : "form");
 }
 
@@ -584,15 +601,16 @@ function resetForm() {
 async function loadAmprahan() {
   const el = document.getElementById("list-status");
   el.innerHTML = loadingHtml();
+  document.getElementById("pag-status").innerHTML="";
   try {
     const res = await api({ action:"getAmprahan", role:user.role, nama:user.nama, ruangan:user.ruangan });
-    if (res.ok) { allAmprahan=res.data; renderStatus(); }
+    if (res.ok) { allAmprahan=res.data; pagStatus=1; renderStatus(); }
     else el.innerHTML = `<div class="empty">Gagal memuat data: ${res.msg}</div>`;
   } catch(e) { el.innerHTML=`<div class="empty">Gagal terhubung ke server.</div>`; }
 }
 
 function setFilterStatus(f,el) {
-  filterStatus=f;
+  filterStatus=f; pagStatus=1;
   document.querySelectorAll("#tab-status .chip").forEach(c=>c.classList.remove("active"));
   el.classList.add("active"); renderStatus();
 }
@@ -600,144 +618,173 @@ function setFilterStatus(f,el) {
 function renderStatus() {
   const data = allAmprahan.filter(d => filterStatus==="semua"||d.status===filterStatus);
   const el   = document.getElementById("list-status");
-  if (!data.length) { el.innerHTML=`<div class="empty">Tidak ada amprahan ditemukan.</div>`; return; }
-  el.innerHTML = data.map(d=>ampItemHtml(d,false)).join("");
+  if (!data.length) {
+    el.innerHTML=`<div class="empty">Tidak ada amprahan ditemukan.</div>`;
+    document.getElementById("pag-status").innerHTML="";
+    return;
+  }
+  const totalHal = Math.ceil(data.length / PAGE_SIZE);
+  if (pagStatus > totalHal) pagStatus = totalHal;
+  const slice = data.slice((pagStatus-1)*PAGE_SIZE, pagStatus*PAGE_SIZE);
+  el.innerHTML = slice.map(d=>ampItemHtml(d,false)).join("");
+  renderPagination("pag-status", pagStatus, totalHal, data.length, "gotoPagStatus");
 }
 
 // ── DASHBOARD GUDANG ──────────────────────────
 async function loadGudang() {
   document.getElementById("list-gudang").innerHTML = loadingHtml();
+  document.getElementById("pag-gudang").innerHTML="";
   try {
     const isKepala = user.role === "kepala_gudang";
-
     if (isKepala) {
-      // Kepala gudang: ambil data + stats dari server (semua jenis)
-      const [resData, resStats] = await Promise.all([
-        api({ action:"getAmprahan", role:user.role, nama:user.nama, ruangan:user.ruangan }),
-        api({ action:"getStats",    role:user.role, nama:user.nama, ruangan:user.ruangan }),
-      ]);
+      const resData = await api({ action:"getAmprahan", role:user.role, nama:user.nama, ruangan:user.ruangan });
       if (resData.ok) {
         dataGudang = resData.data;
-        // FIX: selalu sinkronkan snapshot dengan data terbaru
-        dataGudang.forEach(d => {
-          idKnown.add(d.idTransaksi);
-          snapshotStatus[d.idTransaksi] = d.status;
-        });
+        dupSet = getDuplikatIdMutasi(dataGudang);
+        if (idKnown.size === 0) dataGudang.forEach(d => idKnown.add(d.idTransaksi));
+        pagGudang = 1;
         renderGudang();
       }
-      if (resStats.ok) renderStats(resStats);
     } else {
-      // gudang_obat / gudang_bhp: ambil data terfilter, hitung stat lokal
       const resData = await api({ action:"getAmprahan", role:user.role, nama:user.nama, ruangan:user.ruangan });
       if (resData.ok) {
         dataGudang = resData.data.filter(d => isJenisSesuaiRole(d.jenisAmprahan, user.role));
-        // FIX: selalu sinkronkan snapshot dengan data terbaru
-        dataGudang.forEach(d => {
-          idKnown.add(d.idTransaksi);
-          snapshotStatus[d.idTransaksi] = d.status;
-        });
+        dupSet = getDuplikatIdMutasi(dataGudang);
+        if (idKnown.size === 0) dataGudang.forEach(d => idKnown.add(d.idTransaksi));
+        pagGudang = 1;
         renderGudang();
-        // Hitung stat dari dataGudang lokal (sudah terfilter sesuai jenis)
-        hitungStatLokal(dataGudang);
       }
     }
   } catch(e) {
+    console.error("loadGudang error:", e);
     document.getElementById("list-gudang").innerHTML = `<div class="empty">Gagal terhubung ke server.</div>`;
   }
 }
 
-// Render stat dari response server (kepala_gudang)
-function renderStats(s) {
-  const labelJenis = "";
-  renderStatGrid(s.total, s.belum, s.sudah, s.batal, "Semua Jenis");
-}
-
-// Hitung & render stat dari data lokal (gudang_obat / gudang_bhp)
 function hitungStatLokal(data) {
-  const jenisLabel = {
-    "gudang_obat" : "Obat",
-    "gudang_bhp"  : "BMHP / Cairan / B3",
-  };
+  const jenisLabel = { "gudang_obat":"Obat", "gudang_bhp":"BMHP / Cairan / B3", "kepala_gudang":"Semua Jenis" };
   const label = jenisLabel[user.role] || "";
-  const total = data.length;
-  const belum = data.filter(d => d.status === "Belum Dilayani").length;
-  const sudah = data.filter(d => d.status === "Sudah Dilayani").length;
-  const batal = data.filter(d => d.status === "Batal").length;
-  renderStatGrid(total, belum, sudah, batal, label);
+  renderStatGrid(data.length,
+    data.filter(d=>d.status==="Belum Dilayani").length,
+    data.filter(d=>d.status==="Sudah Dilayani").length,
+    data.filter(d=>d.status==="Batal").length,
+    label);
 }
 
 function renderStatGrid(total, belum, sudah, batal, labelJenis) {
-  const subjudul = labelJenis
-    ? `<div style="font-size:10px;color:#999;margin-top:2px">${labelJenis}</div>`
-    : "";
+  const sub = labelJenis ? `<div style="font-size:10px;color:#999;margin-top:2px">${labelJenis}</div>` : "";
   document.getElementById("stat-grid").innerHTML = `
-    <div class="stat total">
-      <div class="stat-num">${total}</div>
-      <div class="stat-label">Total</div>
-      ${subjudul}
-    </div>
-    <div class="stat belum">
-      <div class="stat-num">${belum}</div>
-      <div class="stat-label">Belum Dilayani</div>
-      ${subjudul}
-    </div>
-    <div class="stat sudah">
-      <div class="stat-num">${sudah}</div>
-      <div class="stat-label">Sudah Dilayani</div>
-      ${subjudul}
-    </div>
-    <div class="stat batal">
-      <div class="stat-num">${batal}</div>
-      <div class="stat-label">Batal</div>
-      ${subjudul}
-    </div>`;
+    <div class="stat total"><div class="stat-num">${total}</div><div class="stat-label">Total</div>${sub}</div>
+    <div class="stat belum"><div class="stat-num">${belum}</div><div class="stat-label">Belum Dilayani</div>${sub}</div>
+    <div class="stat sudah"><div class="stat-num">${sudah}</div><div class="stat-label">Sudah Dilayani</div>${sub}</div>
+    <div class="stat batal"><div class="stat-num">${batal}</div><div class="stat-label">Batal</div>${sub}</div>`;
 }
 
 function setFilterGudang(f,el) {
-  filterGudang=f;
+  filterGudang=f; pagGudang=1;
   document.querySelectorAll("#tab-gudang .filter-bar:nth-child(3) .chip").forEach(c=>c.classList.remove("active"));
   el.classList.add("active"); renderGudang();
 }
 function setFilterKategori(f,el) {
-  filterKategori=f;
+  filterKategori=f; pagGudang=1;
   document.querySelectorAll("#filter-bar-kategori .chip").forEach(c=>c.classList.remove("active"));
   el.classList.add("active"); renderGudang();
 }
 function setFilterJenis(f,el) {
-  filterJenis=f;
+  filterJenis=f; pagGudang=1;
   document.querySelectorAll("#filter-bar-jenis .chip").forEach(c=>c.classList.remove("active"));
   el.classList.add("active"); renderGudang();
 }
+function resetPagGudang() { pagGudang=1; renderGudang(); }
 
 // ── DETEKSI DUPLIKAT ID MUTASI ──
 function getDuplikatIdMutasi(data) {
   const counter = {};
   data.forEach(d => {
-    const id = (d.noIdMutasi || "").trim();
+    const id = String(d.noIdMutasi ?? "").trim();
     if (!id) return;
     counter[id] = (counter[id] || 0) + 1;
   });
-  // Kembalikan Set ID Mutasi yang muncul lebih dari 1 kali
   return new Set(Object.keys(counter).filter(k => counter[k] > 1));
 }
 
 function renderGudang() {
   const q = (document.getElementById("search-gudang").value||"").toLowerCase();
+
+  // Data dasar untuk STATS: ikut filter Kategori & Jenis, TAPI TIDAK ikut filter Status
+  // (karena stats sendiri adalah breakdown per status) dan tidak ikut search box.
+  const dataUntukStats = dataGudang.filter(d => {
+    const mK = filterKategori==="semua" || (d.kategori||"").toLowerCase()===filterKategori.toLowerCase();
+    const mJ = filterJenis==="semua"    || (d.jenisAmprahan||"").toLowerCase()===filterJenis.toLowerCase();
+    return mK && mJ;
+  });
+  hitungStatLokal(dataUntukStats);
+
+  // Data untuk LIST: ikut semua filter (status, kategori, jenis, search)
   const data = dataGudang.filter(d => {
     const mS = filterGudang==="semua"   || d.status===filterGudang;
     const mK = filterKategori==="semua" || (d.kategori||"").toLowerCase()===filterKategori.toLowerCase();
     const mJ = filterJenis==="semua"    || (d.jenisAmprahan||"").toLowerCase()===filterJenis.toLowerCase();
-    const mQ = !q||(d.asalRuangan||"").toLowerCase().includes(q)||(d.namaPetugas||"").toLowerCase().includes(q)||(d.idTransaksi||"").toLowerCase().includes(q)||(d.noIdMutasi||"").toLowerCase().includes(q);
+    const mQ = !q||(d.asalRuangan||"").toLowerCase().includes(q)||(d.namaPetugas||"").toLowerCase().includes(q)||(d.idTransaksi||"").toLowerCase().includes(q)||String(d.noIdMutasi??"").toLowerCase().includes(q);
     return mS&&mK&&mJ&&mQ;
   });
   const el = document.getElementById("list-gudang");
-  if (!data.length) { el.innerHTML=`<div class="empty">Tidak ada data ditemukan.</div>`; return; }
-  el.innerHTML = data.map(d=>ampItemHtml(d,true)).join("");
+  if (!data.length) {
+    el.innerHTML=`<div class="empty">Tidak ada data ditemukan.</div>`;
+    document.getElementById("pag-gudang").innerHTML="";
+    return;
+  }
+  const totalHal = Math.ceil(data.length / PAGE_SIZE);
+  if (pagGudang > totalHal) pagGudang = totalHal;
+  const slice = data.slice((pagGudang-1)*PAGE_SIZE, pagGudang*PAGE_SIZE);
+  el.innerHTML = slice.map(d=>ampItemHtml(d,true)).join("");
+  renderPagination("pag-gudang", pagGudang, totalHal, data.length, "gotoPagGudang");
 }
+
+// ── PAGINATION RENDERER ───────────────────────
+// onPageFnName harus berupa NAMA fungsi global (string), misal "gotoPagStatus",
+// bukan fungsi/closure langsung — supaya aman saat disisipkan ke atribut onclick.
+function renderPagination(containerId, halAktif, totalHal, totalData, onPageFnName) {
+  const el = document.getElementById(containerId);
+  if (totalHal <= 1) { el.innerHTML=""; return; }
+
+  const awal = (halAktif-1)*PAGE_SIZE + 1;
+  const akhir = Math.min(halAktif*PAGE_SIZE, totalData);
+
+  let pages = [];
+  if (totalHal <= 7) {
+    for (let i=1;i<=totalHal;i++) pages.push(i);
+  } else {
+    pages = [1];
+    if (halAktif > 3) pages.push("...");
+    for (let i=Math.max(2,halAktif-1); i<=Math.min(totalHal-1,halAktif+1); i++) pages.push(i);
+    if (halAktif < totalHal-2) pages.push("...");
+    pages.push(totalHal);
+  }
+
+  const tombol = pages.map(p => {
+    if (p==="...") return `<span class="pag-info">…</span>`;
+    return `<button class="pag-btn${p===halAktif?" active":""}" onclick="${onPageFnName}(${p})">${p}</button>`;
+  }).join("");
+
+  el.innerHTML = `
+    <div class="pagination">
+      <button class="pag-btn" onclick="${onPageFnName}(${halAktif-1})" ${halAktif===1?"disabled":""}>‹ Prev</button>
+      ${tombol}
+      <button class="pag-btn" onclick="${onPageFnName}(${halAktif+1})" ${halAktif===totalHal?"disabled":""}>Next ›</button>
+      <span class="pag-info">${awal}–${akhir} dari ${totalData}</span>
+    </div>`;
+}
+
+function gotoPagStatus(p) { pagStatus = p; renderStatus(); }
+function gotoPagGudang(p) { pagGudang = p; renderGudang(); }
 
 // ── RENDER ITEM ───────────────────────────────
 function ampItemHtml(d,isGudang) {
   const sc = d.status==="Sudah Dilayani"?"sudah":d.status==="Batal"?"batal":"belum";
+  const idMutasiHtml = dupSet.has(String(d.noIdMutasi??'').trim())
+    ? `<span class="amp-idmutasi-dup" title="ID Mutasi ini dipakai lebih dari satu kali">${d.noIdMutasi}</span>`
+    : d.noIdMutasi;
   return `
   <div class="amp-item ${sc}">
     <div class="amp-header">
@@ -747,7 +794,7 @@ function ampItemHtml(d,isGudang) {
     <div class="amp-meta">
       <span>🏥 ${d.asalRuangan}</span><span>👤 ${d.namaPetugas}</span>
       <span>💊 ${d.jenisAmprahan}</span><span>⚡ ${d.kategori}</span>
-      <span>🔖 ID Mutasi: ${dupSet.has((d.noIdMutasi||'').trim()) ? `<span class="amp-idmutasi-dup" title="ID Mutasi ini dipakai lebih dari satu kali">${d.noIdMutasi}</span>` : d.noIdMutasi}</span><span>📅 ${d.tglAmprahan}</span>
+      <span>🔖 ID Mutasi: ${idMutasiHtml}</span><span>📅 ${d.tglAmprahan}</span>
     </div>
     ${d.keterangan ? `<div class="amp-keterangan">📝 Keterangan: ${d.keterangan}</div>` : ""}
     ${d.catatanGudang ? `<div class="amp-catatan">💬 Gudang: ${d.catatanGudang}${d.tglBalasan ? " · "+d.tglBalasan : ""}</div>` : ""}
@@ -783,15 +830,7 @@ async function simpanStatus() {
   btn.disabled=true; btn.textContent="Menyimpan...";
   try {
     const res = await api({ action:"updateStatus", idTransaksi:editId, status, catatan });
-    if (res.ok) {
-      showToast("✅ Status berhasil diperbarui.","success");
-      tutupModal();
-      // FIX: reset snapshot agar loadGudang ambil data segar dari server
-      snapshotIds.clear();
-      snapshotStatus = {};
-      idKnown.clear();
-      loadGudang();
-    }
+    if (res.ok) { showToast("✅ Status berhasil diperbarui.","success"); tutupModal(); loadGudang(); }
     else showToast("Gagal: "+res.msg,"error");
   } catch(e) { showToast("Gagal terhubung ke server.","error"); }
   btn.disabled=false; btn.textContent="Simpan";
