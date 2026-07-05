@@ -116,6 +116,34 @@
   .filter-tanggal .btn-sm{white-space:nowrap}
   .tgl-separator{font-size:12px;color:#888}
 
+  /* PENGUMUMAN */
+  .pengumuman-bar{
+    background:#fde8e8;border:1px solid #f5b8b8;border-radius:10px;
+    padding:12px 16px;margin-bottom:14px;
+    display:flex;align-items:flex-start;gap:10px;
+  }
+  .pengumuman-bar .pg-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+  .pengumuman-bar .pg-body{flex:1}
+  .pengumuman-bar .pg-judul{font-size:12px;font-weight:700;color:#c81e1e;margin-bottom:3px}
+  .pengumuman-bar .pg-isi{font-size:12px;color:#7f1d1d;line-height:1.5}
+  .pengumuman-bar .pg-waktu{font-size:11px;color:#e07070;margin-top:4px}
+  .pengumuman-bar .pg-tutup{background:none;border:none;color:#c81e1e;cursor:pointer;font-size:16px;padding:0 4px;flex-shrink:0;opacity:0.7}
+  .pengumuman-bar .pg-tutup:hover{opacity:1}
+
+  /* TOMBOL RKO */
+  .rko-bar{
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:14px;
+  }
+  .btn-rko{
+    background:#dc2626;color:#fff;border:none;
+    padding:9px 18px;border-radius:7px;font-size:13px;font-weight:700;
+    cursor:pointer;text-decoration:none;display:inline-flex;
+    align-items:center;gap:6px;transition:background 0.15s;
+    box-shadow:0 2px 6px rgba(220,38,38,0.3);
+  }
+  .btn-rko:hover{background:#b91c1c}
+
   @media(max-width:600px){
     .form-grid{grid-template-columns:1fr}
     .stat-grid{grid-template-columns:repeat(2,1fr)}
@@ -220,6 +248,29 @@
   </div>
 
   <div class="content">
+    <!-- PENGUMUMAN — tampil untuk semua user kecuali kepala_gudang -->
+    <div id="blok-pengumuman" style="display:none">
+      <div class="pengumuman-bar" id="pengumuman-bar">
+        <div class="pg-icon">📢</div>
+        <div class="pg-body">
+          <div class="pg-judul" id="pg-judul"></div>
+          <div class="pg-isi" id="pg-isi"></div>
+          <div class="pg-waktu" id="pg-waktu"></div>
+        </div>
+        <button class="pg-tutup" onclick="tutupPengumuman()" title="Tutup">✕</button>
+      </div>
+    </div>
+
+    <!-- TOMBOL RKO — tampil di semua tab untuk semua user -->
+    <div id="blok-rko" style="display:none">
+      <div class="rko-bar">
+        <a class="btn-rko" href="https://bit.ly/m/RKO_RSAMP" target="_blank" rel="noopener">
+          📋 RKO OBAT &amp; BMHP
+        </a>
+        <span style="font-size:12px;color:#888">Rencana Kebutuhan Obat &amp; BMHP</span>
+      </div>
+    </div>
+
     <!-- TAB FORM -->
     <div id="tab-form" class="tab-panel" style="display:none">
       <div class="card">
@@ -368,6 +419,17 @@
 const API_URL   = "https://script.google.com/macros/s/AKfycbx1ZAs4i6tQKH7a9eE9_2tIZaJDmwd23nd0USBZ9MtqWbEX_yLLAzxaFdj0nx6yftH8/exec";
 const PAGE_SIZE = 10; // 10 baris per halaman
 
+// ══════════════════════════════════════════════
+//  PENGUMUMAN — edit bagian ini untuk update isi
+//  Set PENGUMUMAN_AKTIF = false untuk nonaktifkan
+// ══════════════════════════════════════════════
+const PENGUMUMAN_AKTIF = true;
+const PENGUMUMAN = {
+  judul : "📢 Pengumuman Gudang Farmasi",
+  isi   : "Mohon perhatian seluruh petugas: pastikan nomor ID Mutasi diisi dengan benar sebelum mengirim amprahan. Amprahan tanpa ID Mutasi yang valid tidak akan diproses.",
+  waktu : "03 Juli 2026 — Kepala Gudang Farmasi",
+};
+
 const JENIS_OBAT_LIST = ["obat"];
 const JENIS_BHP_LIST  = ["bmhp","cairan","b3"];
 
@@ -512,6 +574,22 @@ function masukApp() {
   renderTabBar();
   const isGudang = ["gudang_obat","gudang_bhp","kepala_gudang"].includes(user.role);
   if (isGudang) { cekStatusNotif(); mulaiAutoRefresh(); }
+
+  // Tampilkan tombol RKO untuk semua user
+  document.getElementById("blok-rko").style.display = "block";
+
+  // Tampilkan pengumuman untuk semua user KECUALI kepala_gudang
+  if (user.role !== "kepala_gudang" && PENGUMUMAN_AKTIF) {
+    // Cek apakah user sudah menutup pengumuman ini (simpan di sessionStorage)
+    const sudahTutup = sessionStorage.getItem("pg_tutup_" + PENGUMUMAN.waktu);
+    if (!sudahTutup) {
+      document.getElementById("pg-judul").textContent = PENGUMUMAN.judul;
+      document.getElementById("pg-isi").textContent   = PENGUMUMAN.isi;
+      document.getElementById("pg-waktu").textContent = PENGUMUMAN.waktu;
+      document.getElementById("blok-pengumuman").style.display = "block";
+    }
+  }
+
   switchTab(isGudang ? "gudang" : "form");
 }
 
@@ -525,6 +603,8 @@ function doLogout() {
   document.getElementById("login-error").style.display = "none";
   document.getElementById("btn-notif").style.display = "none";
   document.getElementById("btn-notif").classList.remove("aktif");
+  document.getElementById("blok-pengumuman").style.display = "none";
+  document.getElementById("blok-rko").style.display = "none";
   notifAktif = false;
 }
 
@@ -753,6 +833,12 @@ function filterHariIni() {
   renderGudang();
 }
 
+// Tutup pengumuman — simpan di sessionStorage agar tidak muncul lagi selama sesi ini
+function tutupPengumuman() {
+  document.getElementById("blok-pengumuman").style.display = "none";
+  sessionStorage.setItem("pg_tutup_" + PENGUMUMAN.waktu, "1");
+}
+
 function gotoPagStatus(p){ pagStatus=p; renderStatus(); }
 function gotoPagGudang(p){ pagGudang=p; renderGudang(); }
 
@@ -832,3 +918,4 @@ document.getElementById("login-nama").addEventListener("keydown",e=>{ if(e.key==
 </script>
 </body>
 </html>
+
