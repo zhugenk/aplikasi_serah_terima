@@ -144,6 +144,17 @@
   }
   .btn-rko:hover{background:#b91c1c}
 
+  /* STICKY FILTER GUDANG */
+  .sticky-filter{
+    position:sticky;
+    top:49px; /* tepat di bawah tab-bar */
+    z-index:40;
+    background:#f0f2f5;
+    padding:8px 0 4px;
+    margin-bottom:4px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.06);
+  }
+
   @media(max-width:600px){
     .form-grid{grid-template-columns:1fr}
     .stat-grid{grid-template-columns:repeat(2,1fr)}
@@ -579,15 +590,12 @@ function masukApp() {
   document.getElementById("blok-rko").style.display = "block";
 
   // Tampilkan pengumuman untuk semua user KECUALI kepala_gudang
+  // Muncul setiap kali login — tombol X hanya menyembunyikan sementara di sesi ini
   if (user.role !== "kepala_gudang" && PENGUMUMAN_AKTIF) {
-    // Cek apakah user sudah menutup pengumuman ini (simpan di sessionStorage)
-    const sudahTutup = sessionStorage.getItem("pg_tutup_" + PENGUMUMAN.waktu);
-    if (!sudahTutup) {
-      document.getElementById("pg-judul").textContent = PENGUMUMAN.judul;
-      document.getElementById("pg-isi").textContent   = PENGUMUMAN.isi;
-      document.getElementById("pg-waktu").textContent = PENGUMUMAN.waktu;
-      document.getElementById("blok-pengumuman").style.display = "block";
-    }
+    document.getElementById("pg-judul").textContent = PENGUMUMAN.judul;
+    document.getElementById("pg-isi").textContent   = PENGUMUMAN.isi;
+    document.getElementById("pg-waktu").textContent = PENGUMUMAN.waktu;
+    document.getElementById("blok-pengumuman").style.display = "block";
   }
 
   switchTab(isGudang ? "gudang" : "form");
@@ -833,10 +841,10 @@ function filterHariIni() {
   renderGudang();
 }
 
-// Tutup pengumuman — simpan di sessionStorage agar tidak muncul lagi selama sesi ini
+// Tutup pengumuman — hanya sembunyikan sementara, muncul lagi saat login berikutnya
 function tutupPengumuman() {
+  // Hanya sembunyikan sementara — akan muncul lagi saat login berikutnya
   document.getElementById("blok-pengumuman").style.display = "none";
-  sessionStorage.setItem("pg_tutup_" + PENGUMUMAN.waktu, "1");
 }
 
 function gotoPagStatus(p){ pagStatus=p; renderStatus(); }
