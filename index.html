@@ -15,7 +15,9 @@
   #halaman-app{display:none;min-height:100vh}
 
   /* ── STICKY HEADER ── */
-  .sticky-header{position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+  .sticky-header{position:fixed;top:0;left:0;right:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+  /* Kompensasi tinggi sticky-header agar konten tidak tertutup */
+  .content-wrapper{padding-top:93px} /* topbar(~49px) + tabbar(~44px) */
   .topbar{background:#1a56db;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
   .topbar h2{font-size:15px;font-weight:600}
   .topbar-info{font-size:12px;opacity:0.85}
@@ -260,6 +262,7 @@
     <div class="tab-bar" id="tab-bar"></div>
   </div>
 
+  <div class="content-wrapper">
   <div class="content">
     <!-- PENGUMUMAN — tampil untuk semua user kecuali kepala_gudang -->
     <div id="blok-pengumuman" style="display:none">
@@ -400,6 +403,7 @@
       <div id="pag-gudang"></div>
     </div>
   </div>
+  </div><!-- end content-wrapper -->
 </div>
 
 <!-- MODAL -->
